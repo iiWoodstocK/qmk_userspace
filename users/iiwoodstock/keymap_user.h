@@ -17,16 +17,17 @@
 #pragma once
 
 #ifdef DYNAMIC_KEYMAP_LAYER_COUNT
-#undef DYNAMIC_KEYMAP_LAYER_COUNT
+	#undef DYNAMIC_KEYMAP_LAYER_COUNT
 #endif
-#define DYNAMIC_KEYMAP_LAYER_COUNT 5
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
 
 #define WIN_F MO(WIN_FN)
 #define MAC_F MO(MAC_FN)
-#define EXT_F MO(EXTRA_FN)
+#define LOCK_F MO(LOCK_FN)
 
 #define DF_WIN DF(WIN_BASE)
 #define DF_MAC DF(MAC_BASE)
+#define LOCK_T TG(LOCK_TG)
 
 // clang-format off
 
@@ -35,7 +36,8 @@ enum layers {
     MAC_BASE,
     WIN_FN,
     MAC_FN,
-    EXTRA_FN
+    LOCK_TG,
+	LOCK_FN
 };
 
 // clang-format on

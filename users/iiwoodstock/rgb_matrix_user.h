@@ -27,4 +27,4 @@
 //bool is_caps_lock_indicator(uint16_t keycode);
 //bool is_transparent(uint16_t keycode);
 //bool is_not_transparent(uint16_t keycode);
-bool is_shift_indicator(uint16_t keycode);
+//bool is_shift_indicator(uint16_t keycode);

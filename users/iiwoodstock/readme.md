@@ -1,6 +1,6 @@
 # iiWoodstocK's stuff
 
-This keymap builds on Vnmm & archrovisual's but with some changes
+This keymap builds on Vnmm & archrovisual & jonavin
 ## Features
 
 -   Alphabet keys light up green when caps lock is on
@@ -12,3 +12,9 @@ This keymap builds on Vnmm & archrovisual's but with some changes
 -   EE_CLR: FN + ESC
 -   QK_BOOT: FN + \
 -   Asym_eager_defer_pk @ 5ms debounce
+
+28/12/2024 Changelog
+-   VIA disabled
+-   Toggleable locked layer with FN + L. No keys enabled except FN key which lights up to indicate locked layer. Return to default layer with FN + L
+-   Dynamic idle timeout, controlled with FN + [ and FN + ] or FN + encoder knob, represented in minutes with number row. 1 min - 10 mins (0 represents 10 mins) or OFF (no timeout, represented with both - + keys)
+-   FN + knob button to sleep PC

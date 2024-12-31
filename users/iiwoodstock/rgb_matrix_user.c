@@ -15,12 +15,12 @@
  */
 
 #include QMK_KEYBOARD_H
-#include "rgb_matrix_user.h"
-#include "keymap_user.h"
+#include "rgb_matrix_map.h"
+#include "iiwoodstock.h"
 
 keypos_t led_index_key_position[RGB_MATRIX_LED_COUNT];
 
-void keyboard_post_init_user(void) {
+void keyboard_post_init_kb(void) {
     // Set up led_index_key_position
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         for (uint8_t col = 0; col < MATRIX_COLS; col++) {
@@ -30,6 +30,11 @@ void keyboard_post_init_user(void) {
             }
         }
     }
+}
+
+// check if keycode is affected by shift on the number row
+bool is_shift_indicator(uint16_t keycode) {
+    return (KC_1 <= keycode && keycode <= KC_0) || keycode == KC_MINS || keycode == KC_EQL || keycode == KC_GRV || keycode == KC_BSLS || keycode == KC_LBRC || keycode == KC_RBRC || keycode == KC_SCLN || keycode == KC_QUOT || keycode == KC_COMM || keycode == KC_DOT || keycode == KC_SLSH || keycode == QK_GESC || keycode == KC_LSFT || keycode == KC_RSFT;
 }
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
@@ -55,6 +60,12 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                 continue;
             }
 #endif
+#ifdef LOCKLAYER_INDICATOR_COLOR
+            if (keycode == LOCK_T) {
+                rgb_matrix_set_color(i, LOCKLAYER_INDICATOR_COLOR);
+                continue;
+            }
+#endif
 #ifdef CURRENT_LAYER_INDICATOR_COLOR
             uint8_t default_layer = get_highest_layer(default_layer_state);
             if (keycode == DF(default_layer)) {
@@ -63,28 +74,49 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
             }
 #endif
 
-
         // -- "Complex" logic
         switch (current_layer) {
             case MAC_BASE:
             case WIN_BASE:
+            case MAC_FN:
+            case WIN_FN:
+			case LOCK_TG:
+			case LOCK_FN:
                 // -- Background
 #ifdef MAC_LAYER_DEFAULT_COLOR
                 // im guessing `MAC_LAYER_DEFAULT_COLOR` is a "background" color for the layer
                 // you were making it after some other stuff, which would override your previous drawing, lets do it the first thing instead
                 // also, calling `set_color_all` ruins the purpose of the `advanced` function, which is to draw the LEDs in smaller batches
-                if (current_layer == MAC_BASE) {
+                if ((current_layer == MAC_BASE) || (current_layer == MAC_FN && keycode == KC_TRNS)) {
                     rgb_matrix_set_color(i, MAC_LAYER_DEFAULT_COLOR);
                 }
 #endif
                 // TODO: add equivalent code for default windows color, if you like
 #ifdef WIN_LAYER_DEFAULT_COLOR
-                if (current_layer == WIN_BASE) {
+                if ((current_layer == WIN_BASE) || (current_layer == WIN_FN && keycode == KC_TRNS)) {
                     rgb_matrix_set_color(i, WIN_LAYER_DEFAULT_COLOR);
                 }
 #endif
+#ifdef LOCK_LAYER_COLOR
+                if ((current_layer == LOCK_TG) || (current_layer == LOCK_FN)) {
+                    rgb_matrix_set_color(i, LOCK_LAYER_COLOR);
+                }
+                if (current_layer == LOCK_TG && keycode == LOCK_F) {
+                    rgb_matrix_set_color(i, LOCKLAYER_INDICATOR_COLOR);
+                }
+#endif
+#ifdef FN_LAYER_KEYS_COLOR
+                if (((current_layer == MAC_FN) || (current_layer == WIN_FN)) && keycode != KC_TRNS) {
+                    rgb_matrix_set_color(i, FN_LAYER_KEYS_COLOR);
+                }
+#endif
                 // -- Indicators
-#ifdef CAPS_LOCK_INDICATOR_LIGHT_ALPHAS
+#ifdef CAPS_LOCK_INDICATOR_COLOR
+                if (caps) {
+                    if (keycode == KC_CAPS || keycode == KC_LSFT || keycode == KC_RSFT) {
+                        rgb_matrix_set_color(i, CAPS_LOCK_INDICATOR_COLOR);
+                    }
+                }
                 if (shift ^ caps) { // this is: either, but not both
                     if (KC_A <= keycode && keycode <= KC_Z) {
                         // renamed, as these are not caps-LOCK and perhaps you want different colors for alphas and the lock
@@ -92,15 +124,6 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                     }
                 }
 #endif
-
-#ifdef CAPS_LOCK_INDICATOR_COLOR
-                if (caps) {
-                    if (keycode == KC_CAPS || keycode == KC_LSFT || keycode == KC_RSFT) {
-                        rgb_matrix_set_color(i, CAPS_LOCK_INDICATOR_COLOR);
-                    }
-                }
-#endif
-
 #ifdef SHIFT_INDICATOR_COLOR
                 if (shift && is_shift_indicator(keycode)) {
                     rgb_matrix_set_color(i, SHIFT_INDICATOR_COLOR);
@@ -108,33 +131,22 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 #endif
                 break;
 
-            case MAC_FN:
-            case WIN_FN:
-                // -- Background
-#ifdef MAC_LAYER_DEFAULT_COLOR
-                if (current_layer == MAC_FN && keycode == KC_TRNS) {
-                    rgb_matrix_set_color(i, MAC_LAYER_DEFAULT_COLOR);
-                }
-#endif
-                // TODO: add equivalent code for default windows color, if you like
-#ifdef WIN_LAYER_DEFAULT_COLOR
-                if (current_layer == WIN_FN && keycode == KC_TRNS) {
-                    rgb_matrix_set_color(i, WIN_LAYER_DEFAULT_COLOR);
-                }
-#endif
-#ifdef FN_LAYER_KEYS_COLOR
-                if (keycode != KC_TRNS) {
-                    rgb_matrix_set_color(i, FN_LAYER_KEYS_COLOR);
-                }
+#ifdef IDLE_TIMEOUT_ENABLE
+    // Idle timeout duration indicator lights
+		if ((current_layer == WIN_FN) || (current_layer == MAC_FN)) {
+            // Add RGB Timeout Indicator -- shows 0 to 10 using num row;  larger numbers using 16bit code
+            uint16_t timeout_threshold = get_timeout_threshold();
+            if (timeout_threshold <= 0) {
+				rgb_matrix_set_color(LED_LIST_NUMROW[11], TIMEOUT_INDICATOR_COLOR);
+				rgb_matrix_set_color(LED_LIST_NUMROW[12], TIMEOUT_INDICATOR_COLOR);
+			}
+			else if (timeout_threshold <= 10) {
+				rgb_matrix_set_color(LED_LIST_NUMROW[timeout_threshold], TIMEOUT_INDICATOR_COLOR);
+			}
+		}
 #endif
             break;
         }
     }
-
     return false;
-}
-
-// check if keycode is affected by shift on the number row
-bool is_shift_indicator(uint16_t keycode) {
-    return (KC_1 <= keycode && keycode <= KC_0) || keycode == KC_MINS || keycode == KC_EQL || keycode == KC_GRV || keycode == KC_BSLS || keycode == KC_LBRC || keycode == KC_RBRC || keycode == KC_SCLN || keycode == KC_QUOT || keycode == KC_COMM || keycode == KC_DOT || keycode == KC_SLSH || keycode == QK_GESC || keycode == KC_LSFT || keycode == KC_RSFT;
 }
