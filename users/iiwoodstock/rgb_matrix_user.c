@@ -129,8 +129,6 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                     rgb_matrix_set_color(i, SHIFT_INDICATOR_COLOR);
                 }
 #endif
-                break;
-
 #ifdef IDLE_TIMEOUT_ENABLE
     // Idle timeout duration indicator lights
 		if ((current_layer == WIN_FN) || (current_layer == MAC_FN)) {
